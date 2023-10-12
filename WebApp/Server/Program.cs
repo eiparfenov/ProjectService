@@ -21,6 +21,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(optionsBuilder =>
 });
 
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
 
 var app = builder.Build();
@@ -30,6 +31,7 @@ app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 
 app.UseRouting();
+app.UseAuthentication();
 
 #region Authentication
 
@@ -39,6 +41,11 @@ app.MapGet(VkDefaults.LoginUrl, async context =>
     {
         RedirectUri = "/"
     });
+});
+app.MapGet(VkDefaults.LogoutUrl, async context =>
+{
+    await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    context.Response.Redirect("/");
 });
 
 #endregion

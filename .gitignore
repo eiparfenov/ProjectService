@@ -385,3 +385,7 @@ WebApp/Server/google-creds.json
 .idea/
 
 WebApp/Server/app.db
+
+WebApp/Server/app.db-wal
+
+WebApp/Server/app.db-shm

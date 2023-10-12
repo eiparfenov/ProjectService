@@ -1,7 +1,10 @@
-﻿using System.Security.Claims;
+﻿using System.Net;
+using System.Security.Claims;
 using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.Extensions.Options;
 using WebApp.Server.Services;
@@ -11,27 +14,35 @@ namespace WebApp.Server.Authentication.Vk;
 
 public class VkHandler: OAuthHandler<VkOptions>
 {
-    private readonly HttpClient httpClient;
+    private readonly HttpClient _httpClient;
     private readonly IUserService _userService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     
-    public VkHandler(IOptionsMonitor<VkOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock, HttpClient httpClient, IUserService userService) : base(options, logger, encoder, clock)
+    public VkHandler(IOptionsMonitor<VkOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock, HttpClient httpClient, IUserService userService, IHttpContextAccessor httpContextAccessor) : base(options, logger, encoder, clock)
     {
-        this.httpClient = httpClient;
+        _httpClient = httpClient;
         _userService = userService;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     protected override async Task<AuthenticationTicket> CreateTicketAsync(ClaimsIdentity identity, AuthenticationProperties properties, OAuthTokenResponse tokens)
     {
         
         Logger.LogInformation("Got user token {token}", tokens.AccessToken);
-        using var httpResponse = await httpClient.GetAsync(string.Format(VkDefaults.UserDataRequestTemplate, tokens.AccessToken));
+        using var httpResponse = await _httpClient.GetAsync(string.Format(VkDefaults.UserDataRequestTemplate, tokens.AccessToken));
         
         var response = await httpResponse.Content.ReadFromJsonAsync<RootResponse>();
         var userData = response!.Response.First();
 
         var userId = _userService.GetUserOnLoginByVk(userData.Id, userData.FirstName!, userData.LastName!);
-        
-        return await base.CreateTicketAsync(identity, properties, tokens);
+        var jsonUser = JsonSerializer.SerializeToElement($"{{\"UserId\": {userId}}}");
+
+        var principal = new ClaimsPrincipal(identity);
+        var context = new OAuthCreatingTicketContext(principal, properties, Context, Scheme,
+            Options, Backchannel, tokens, jsonUser);
+        identity.AddClaim(new("UserId", userId.ToString()!));
+        await Events.CreatingTicket(context);
+        return new AuthenticationTicket(principal, context.Properties, Scheme.Name);
     }
     
     public class UserResponse
