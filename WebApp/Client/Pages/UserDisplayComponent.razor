@@ -1,0 +1,55 @@
+﻿@using WebApp.Shared.Grpc
+@using WebApp.Shared.Authentication.Vk
+@using WebApp.Client.Extensions
+
+@inject IUserGrpcService UserGrpcService
+@inject NavigationManager Navigation
+
+
+<AuthorizeView>
+    <Authorized>
+        @{
+            RenderFragment content =
+                @<Space Direction="DirectionVHType.Vertical">
+                    <SpaceItem>
+                        <Button>
+                            <Icon Type="user" Theme="outline"/> Профиль
+                        </Button>
+                    </SpaceItem>
+                    <SpaceItem>
+                        <Button OnClick="() => Navigation.NavigateTo(VkDefaults.LogoutUrl, true)">
+                            <Icon Type="logout" Theme="outline"/> Выйти
+                        </Button >
+                    </SpaceItem>
+                </Space>;
+
+            RenderFragment text = @<Paragraph>@context.GetFirstName() @context.GetLastName()</Paragraph>;
+        }
+        <Popover
+            Placement="Placement.BottomRight"
+            TitleTemplate="@text"
+            ContentTemplate="@content"
+            Trigger="new[] { Trigger.Hover }"
+            OnVisibleChange="b => IsPopoverVisible = b">
+            <Space>
+                <SpaceItem>
+                    <Avatar Size="large">@context.GetFirstName().FirstOrDefault()</Avatar>
+                </SpaceItem>
+                <SpaceItem>
+                    <Icon Type="@IconType" Theme="outline"></Icon>
+                </SpaceItem>
+            </Space>
+        </Popover>
+    </Authorized>
+    <NotAuthorized>
+        <Button OnClick="() => Navigation.NavigateTo(VkDefaults.LoginUrl, true)">
+            <Icon Type="login" Theme="outline"/> Войти
+        </Button>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code{
+
+    public bool IsPopoverVisible { get; set; }
+    public string IconType => IsPopoverVisible ? "up" : "down";
+}

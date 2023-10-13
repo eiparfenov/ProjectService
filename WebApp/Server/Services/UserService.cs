@@ -6,6 +6,7 @@ namespace WebApp.Server.Services;
 public interface IUserService
 {
     Task<Guid> GetUserOnLoginByVk(long vkId, string firstName, string lastName);
+    Task<User> GetUserById(Guid id);
 }
 
 public class UserService: IUserService
@@ -39,5 +40,11 @@ public class UserService: IUserService
         }
 
         return user.Id;
+    }
+
+    public async Task<User> GetUserById(Guid id)
+    {
+        var user = await _db.Users.AsNoTracking().SingleOrDefaultAsync(user => user.Id == id);
+        return user;
     }
 }

@@ -34,7 +34,7 @@ public class VkHandler: OAuthHandler<VkOptions>
         var response = await httpResponse.Content.ReadFromJsonAsync<RootResponse>();
         var userData = response!.Response.First();
 
-        var userId = _userService.GetUserOnLoginByVk(userData.Id, userData.FirstName!, userData.LastName!);
+        var userId = await _userService.GetUserOnLoginByVk(userData.Id, userData.FirstName!, userData.LastName!);
         var jsonUser = JsonSerializer.SerializeToElement($"{{\"UserId\": {userId}}}");
 
         var principal = new ClaimsPrincipal(identity);

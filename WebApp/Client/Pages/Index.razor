@@ -1,6 +1,9 @@
 ﻿@page "/"
 @using WebApp.Shared.Authentication.Vk
 @inject NavigationManager Navigation
-
-<Button OnClick="() => Navigation.NavigateTo(VkDefaults.LoginUrl, true)">Войти</Button>
-<Button OnClick="() => Navigation.NavigateTo(VkDefaults.LogoutUrl, true)">Выйти</Button>
+<Space>
+    <SpaceItem Style="width: 300px"></SpaceItem>
+    <SpaceItem>
+        <UserDisplayComponent/>
+    </SpaceItem>
+</Space>

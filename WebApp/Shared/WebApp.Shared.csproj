@@ -12,5 +12,6 @@
     
     <ItemGroup>
       <PackageReference Include="PathString" Version="1.0.5" />
+      <PackageReference Include="protobuf-net.Grpc" Version="1.1.1" />
     </ItemGroup>
 </Project>
