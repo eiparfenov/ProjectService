@@ -13,9 +13,20 @@ public interface IDepartmentGrpcService
 [ProtoContract]
 public class DepartmentDto
 {
-    [ProtoMember(1)] public required Guid Id { get; set; }
-    [ProtoMember(2)] public required string Title { get; set; }
-    [ProtoMember(3)] public required string UrlTitle { get; set; }
+    [ProtoMember(1)] public Guid Id { get; set; }
+    [ProtoMember(2)] public string Title { get; set; }
+    [ProtoMember(3)] public string UrlTitle { get; set; }
+    
+    /// <summary>
+    /// Use only on client
+    /// </summary>
+    public State DtoState { get; set; }
+    public enum State
+    {
+        Initial,
+        Updated,
+        Created
+    }
 }
 
 [ProtoContract]

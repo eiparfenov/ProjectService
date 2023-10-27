@@ -1,7 +1,120 @@
-﻿@attribute [Route(Routes.Admin.Department.Index)]
+﻿@using WebApp.Shared.Grpc
 
-<h3>DepartmentsPage</h3>
+@layout AdminPageLayout
+
+@attribute [Route(Routes.Admin.Department.Route)]
+
+@inject IDepartmentGrpcService DepartmentGrpcService
+@inject ILogger<DepartmentsPage> Logger
+
+
+<PageTitle>Подразделения</PageTitle>
+
+<Table
+    TItem="DepartmentDto"
+    DataSource="Departments"
+    Loading="Loading"
+>
+    <Column Title="Url" @bind-Field="context.UrlTitle">
+        <Input
+            TValue="string"
+            @bind-Value="context.UrlTitle"
+            OnChange="() => OnUpdate(context)"
+        />
+    </Column>
+    <Column Title="Название" @bind-Field="context.Title">
+        <Input 
+            TValue="string" 
+            @bind-Value="context.Title" 
+            OnChange="() => OnUpdate(context)"
+        />
+    </Column>
+    <ActionColumn>
+        <Button Danger OnClick="() => OnDelete(context)">
+            <Icon Type="delete" Theme="outline"/>
+        </Button>
+    </ActionColumn>
+    <Column Title="" @bind-Field="context.DtoState">
+        @if (context.DtoState == DepartmentDto.State.Created)
+        {
+            <Icon Type="plus-circle" Theme="outline"/>
+        }
+        else if (context.DtoState == DepartmentDto.State.Updated)
+        {
+            <Icon Type="edit" Theme="outline"/>
+        }
+    </Column>
+</Table>
+<Button OnClick="OnCreate">
+    <Icon Type="plus-circle" Theme="outline"/> Создать
+</Button>
+<Button Type="@ButtonType.Primary" Disabled="!Changed" OnClick="OnSave">
+    <Icon Type="save" Theme="outline"/> Сохранить
+</Button>
+
 
 @code {
+    [Parameter]
+    public string? DepartmentUrl { get; set; }
+
+    public bool Loading { get; set; }
+    public bool Changed => DeletedDepartmentsIds.Any() || Departments.Any(dep => dep.DtoState != DepartmentDto.State.Initial);
+
+    public List<DepartmentDto> Departments { get; set; } = new();
+
+    public List<DepartmentDto> UpdatedDepartments => Departments.Where(dep => dep.DtoState == DepartmentDto.State.Updated).ToList();
+    public List<DepartmentDto> CreatedDepartments => Departments.Where(dep => dep.DtoState == DepartmentDto.State.Created).ToList();
+    public List<Guid> DeletedDepartmentsIds { get; set; } = new();
     
+    
+    
+    protected override async Task OnInitializedAsync()
+    {
+        Loading = true;
+        var response = await DepartmentGrpcService.ReadAllDepartments(new ReadAllDepartmentsRequest());
+        Departments = response.Departments ?? new List<DepartmentDto>();
+        Loading = false;
+    }
+
+
+    private async Task OnUpdate(DepartmentDto dto)
+    {
+        if (dto.DtoState == DepartmentDto.State.Initial)
+        {
+            dto.DtoState = DepartmentDto.State.Updated;
+        }
+    }
+
+    private async Task OnDelete(DepartmentDto dto)
+    {
+        if (!CreatedDepartments.Contains(dto))
+        {
+            DeletedDepartmentsIds.Add(dto.Id);
+        }
+        Departments.Remove(dto);
+    }
+
+    private async Task OnCreate()
+    {
+        Departments.Add(new DepartmentDto()
+        {
+            DtoState = DepartmentDto.State.Created
+        });
+    }
+
+    private async Task OnSave()
+    {
+        Loading = true;
+        var request = new UpdateDepartmentsRequest()
+        {
+            DepartmentsToAdd = CreatedDepartments,
+            DepartmentsToUpdate = UpdatedDepartments,
+            DepartmentsToDelete = DeletedDepartmentsIds
+        };
+        var response = await DepartmentGrpcService.UpdateDepartments(request);
+        Departments = response.Departments ?? new List<DepartmentDto>();
+        Loading = false;
+
+    }
+
 }

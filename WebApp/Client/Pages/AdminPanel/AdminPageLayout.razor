@@ -1,0 +1,34 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+
+<Layout>
+    <Header>
+        <Paragraph>Сервис бронирования</Paragraph>
+    </Header>
+    <Content Style="margin: 2em">
+        <Layout  Class="site-layout-background">
+            <Sider  Class="site-layout-background">
+                <Menu>
+                    <MenuItem OnClick="() => NavigationManager.NavigateTo(Routes.Admin.Index(DepartmentUrl))">Главная</MenuItem>
+                    <MenuItem OnClick="() => NavigationManager.NavigateTo(Routes.Admin.Department.Index(DepartmentUrl))">Подразделения</MenuItem>
+                </Menu>
+            </Sider>
+            <Content>
+                @Body
+            </Content>
+        </Layout>
+    </Content>
+    <Footer>
+
+    </Footer>
+</Layout>
+
+
+@code {
+
+    [CascadingParameter]
+    public RouteData RouteData { get; set; }
+
+    public string DepartmentUrl => RouteData.RouteValues["departmentUrl"].ToString();
+
+}

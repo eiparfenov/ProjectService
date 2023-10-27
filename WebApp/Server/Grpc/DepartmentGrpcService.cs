@@ -6,16 +6,16 @@ namespace WebApp.Server.Grpc;
 
 public class DepartmentGrpcService: IDepartmentGrpcService
 {
-    private readonly ApplicationDbContext db;
+    private readonly ApplicationDbContext _db;
 
     public DepartmentGrpcService(ApplicationDbContext db)
     {
-        this.db = db;
+        this._db = db;
     }
 
     public async Task<ReadAllDepartmentsResponse> ReadAllDepartments(ReadAllDepartmentsRequest request)
     {
-        var departments = await db.Departments
+        var departments = await _db.Departments
             .Select(dep => new DepartmentDto()
             {
                 Id = dep.Id,
@@ -37,8 +37,8 @@ public class DepartmentGrpcService: IDepartmentGrpcService
             var departmentsToUpdateDto = request.DepartmentsToUpdate
                 .ToDictionary(dep => dep.Id);
             
-            var departmentsToUpdate = await db.Departments
-                .Where(dep => departmentsToUpdateDto.ContainsKey(dep.Id))
+            var departmentsToUpdate = await _db.Departments
+                .Where(dep => departmentsToUpdateDto.Keys.Contains(dep.Id))
                 .ToListAsync();
             
             departmentsToUpdate
@@ -59,20 +59,30 @@ public class DepartmentGrpcService: IDepartmentGrpcService
                     UrlTitle = depDto.UrlTitle
                 })
                 .ToList();
-            await db.AddRangeAsync(departmentsToAdd);
+            
+            await _db.Departments.AddRangeAsync(departmentsToAdd);
+
+            var roles = departmentsToAdd
+                .SelectMany(dep => new Role[]
+                {
+                    new Role() {RoleType = RoleType.AdminDepartment, MatchedDepartment = dep},
+                    new Role() {RoleType = RoleType.Receptionist, MatchedDepartment = dep},
+                    new Role() {RoleType = RoleType.Employee, MatchedDepartment = dep},
+                });
+            await _db.Roles.AddRangeAsync(roles);
         }
 
         if (request.DepartmentsToDelete != null && request.DepartmentsToDelete.Any())
         {
             var departmentsToDeleteId = request.DepartmentsToDelete.ToHashSet();
-            await db.Departments
+            await _db.Departments
                 .Where(dep => departmentsToDeleteId.Contains(dep.Id))
                 .ExecuteDeleteAsync();
         }
 
-        await db.SaveChangesAsync();
+        await _db.SaveChangesAsync();
 
-        var departmentsAfterSave = await db.Departments
+        var departmentsAfterSave = await _db.Departments
             .Select(dep => new DepartmentDto()
             {
                 Id = dep.Id,

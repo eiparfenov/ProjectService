@@ -21,7 +21,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddHttpClient<VkHandler>();
 builder.Services.AddDbContext<ApplicationDbContext>(optionsBuilder =>
 {
-    optionsBuilder.UseSqlite(builder.Configuration.GetConnectionString("DataBase"));
+    optionsBuilder.UseNpgsql(builder.Configuration.GetConnectionString("DataBase"));
 });
 
 builder.Services.AddHostedService<MigrateDb<ApplicationDbContext>>();
@@ -67,6 +67,7 @@ app.MapGet("/auth-test", async context =>
 #region Grpc
 
 app.MapGrpcService<UserGrpcService>().EnableGrpcWeb();
+app.MapGrpcService<DepartmentGrpcService>().EnableGrpcWeb();
 
 #endregion
 

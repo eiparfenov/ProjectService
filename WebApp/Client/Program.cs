@@ -18,8 +18,10 @@ builder.Services.AddAntDesign();
 var baseUri = new Uri(builder.HostEnvironment.BaseAddress);
 var handler = new GrpcWebHandler(GrpcWebMode.GrpcWebText, new HttpClientHandler());
 builder.Services.AddLogging();
-builder.Services.AddCodeFirstGrpcClient<IUserGrpcService>(options => options.Address = baseUri)
-    .ConfigureChannel(options => options.HttpHandler = handler);
+
+builder.Services.AddCodeFirstGrpcClient<IUserGrpcService>(options => options.Address = baseUri).ConfigureChannel(options => options.HttpHandler = handler);
+builder.Services.AddCodeFirstGrpcClient<IDepartmentGrpcService>(options => options.Address = baseUri).ConfigureChannel(options => options.HttpHandler = handler);
+
 builder.Services.AddScoped<AuthenticationStateProvider, CookieAuthenticationStateProvider>();
 builder.Services.AddAuthorizationCore();
 

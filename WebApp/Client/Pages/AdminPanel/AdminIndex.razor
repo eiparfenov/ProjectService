@@ -1,0 +1,7 @@
+﻿@layout AdminPageLayout
+@attribute [Route(Routes.Admin.Route)]
+<Paragraph>Это главная страница.</Paragraph>
+@code {
+    [Parameter]
+    public string? DepartmentUrl { get; set; }
+}
