@@ -12,7 +12,7 @@ using WebApp.Server;
 namespace WebApp.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20231027064347_InitialCreate")]
+    [Migration("20231027113339_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -102,24 +102,29 @@ namespace WebApp.Server.Migrations
                 {
                     b.HasOne("Models.Department", "MatchedDepartment")
                         .WithMany()
-                        .HasForeignKey("DepartmentId");
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("MatchedDepartment");
                 });
 
             modelBuilder.Entity("Models.UserRole", b =>
                 {
-                    b.HasOne("Models.User", null)
+                    b.HasOne("Models.Role", "Role")
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Models.Role", null)
+                    b.HasOne("Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Role");
+
+                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

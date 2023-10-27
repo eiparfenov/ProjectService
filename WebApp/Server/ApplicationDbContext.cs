@@ -22,11 +22,11 @@ public class ApplicationDbContext : DbContext
                 .WithMany(role => role.Users)
                 .UsingEntity<UserRole>(
                     j => j
-                        .HasOne<Role>()
+                        .HasOne(x => x.Role)
                         .WithMany()
                         .HasForeignKey(userRole => userRole.RoleId),
                     j => j
-                        .HasOne<User>()
+                        .HasOne(x => x.User)
                         .WithMany()
                         .HasForeignKey(userRole => userRole.UserId),
                     j => j.HasKey(t => new { t.UserId, t.RoleId })

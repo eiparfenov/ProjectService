@@ -10,7 +10,12 @@
             <Sider  Class="site-layout-background">
                 <Menu>
                     <MenuItem OnClick="() => NavigationManager.NavigateTo(Routes.Admin.Index(DepartmentUrl))">Главная</MenuItem>
-                    <MenuItem OnClick="() => NavigationManager.NavigateTo(Routes.Admin.Department.Index(DepartmentUrl))">Подразделения</MenuItem>
+                    <AuthorizeView Roles="SuperAdmin">
+                        <MenuItem OnClick="() => NavigationManager.NavigateTo(Routes.Admin.Department.Index(DepartmentUrl))">Подразделения</MenuItem>
+                    </AuthorizeView>
+                    <AuthorizeView Roles="SuperAdmin, DepartmentAdmin">
+                        <MenuItem OnClick="() => NavigationManager.NavigateTo(Routes.Admin.Users.Index(DepartmentUrl))">Пользователи</MenuItem>
+                    </AuthorizeView>
                 </Menu>
             </Sider>
             <Content>
@@ -27,7 +32,7 @@
 @code {
 
     [CascadingParameter]
-    public RouteData RouteData { get; set; }
+    public RouteData RouteData { get; set; } = default!;
 
     public string DepartmentUrl => RouteData.RouteValues["departmentUrl"].ToString();
 

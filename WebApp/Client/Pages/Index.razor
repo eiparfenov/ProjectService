@@ -1,9 +1,16 @@
 ﻿@page "/"
 @using WebApp.Client.Pages.Components
 @inject NavigationManager Navigation
+
+@{
+    var temp = "rtu-tc";
+}
 <Space>
     <SpaceItem Style="width: 300px"></SpaceItem>
     <SpaceItem>
         <UserDisplayComponent/>
     </SpaceItem>
 </Space>
+<AuthorizeView Roles="SuperAdmin">
+        <Button Type="@ButtonType.Link" OnClick="() => Navigation.NavigateTo(Routes.Admin.Index(temp))">Панель администратора</Button>
+</AuthorizeView>

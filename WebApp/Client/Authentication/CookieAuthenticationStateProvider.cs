@@ -17,7 +17,7 @@ public class CookieAuthenticationStateProvider: AuthenticationStateProvider
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        _logger.LogWarning("Попытка аворизации");
+        _logger.LogWarning("Попытка авторизации");
         var response = await _userGrpcService.GetAuthenticatedUser(new GetAuthenticatedUserRequest()) as GetAuthenticatedUserResponseAuthorized;
 
         if (response == null)
@@ -27,13 +27,18 @@ public class CookieAuthenticationStateProvider: AuthenticationStateProvider
             return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
         }
 
-        var principal = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]
+        var identity = new ClaimsIdentity(new Claim[]
         {
             new ("FirstName", response.FirstName!),
             new ("LastName", response.LastName!)
-        }, "AuthCookie"));
+        }, "AuthCookie");
+        foreach (var responseRole in response.Roles ?? Enumerable.Empty<string>())
+        {
+            identity.AddClaim(new Claim(ClaimTypes.Role, responseRole));
+        }
+        
         _logger.LogWarning("Успех");
 
-        return new AuthenticationState(principal);
+        return new AuthenticationState(new ClaimsPrincipal(identity));
     }
 }

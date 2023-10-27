@@ -1,0 +1,71 @@
+﻿@using WebApp.Shared.Grpc
+@attribute [Route(Routes.Admin.Users.Route)]
+@layout AdminPageLayout
+@inject IUserGrpcService UserGrpcService
+
+<Table
+    TItem="UserDto"
+    Loading="Loading"
+    DataSource="Users">
+    <PropertyColumn Property="ctx => ctx.FirstName"/>
+    <PropertyColumn Property="ctx => ctx.MiddleName"/>
+    <PropertyColumn Property="ctx => ctx.LastName"/>
+    <Column @bind-Field="context.RolesInDepartment">
+        <SimpleSelect
+            Mode="multiple"
+            DefaultValues="context.RolesInDepartment"
+            DataSource="Roles"
+            OnSelectedItemsChanged="enumerable => OnSelectedRolesChanged(context, enumerable)">
+            
+        </SimpleSelect>
+    </Column>
+</Table>
+<Button Type="@ButtonType.Primary" Disabled="!Changed" OnClick="OnSave">
+    <Icon Type="save" Theme="outline"/> Сохранить
+</Button>
+
+@code {
+
+    [Parameter]
+    public string? DepartmentUrl { get; set; }
+
+    public bool Changed => Users.Any(user => user.Changed);
+    public bool Loading { get; set; }
+    public List<UserDto> Users { get; set; } = new();
+    public List<string> Roles { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Loading = true;
+        var usersResponse = await UserGrpcService.PerformUserAdminPanel(new PerformUserAdminPanelRequest()
+        {
+            DepartmentUrl = DepartmentUrl
+        });
+        Users = usersResponse.Users ?? new List<UserDto>();
+        Users.ForEach(user => user.RolesInDepartment ??= new List<string>());
+
+        var rolesResponse = await UserGrpcService.GetAllRolesInDepartment(new GetAllRolesInDepartmentRequest());
+        Roles = rolesResponse.Roles ?? new List<string>();
+        Loading = false;
+    }
+
+    private void OnSelectedRolesChanged(UserDto context, IEnumerable<string> value)
+    {
+        context.Changed = true;
+        context.RolesInDepartment = value.ToList();
+    }
+
+    private async Task OnSave()
+    {
+        Loading = true;
+        var usersResponse = await UserGrpcService.PerformUserAdminPanel(new PerformUserAdminPanelRequest()
+        {
+            UsersToUpdate = Users.Where(user => user.Changed).ToList(),
+            DepartmentUrl = DepartmentUrl
+        });
+        Users = usersResponse.Users ?? new List<UserDto>();
+        Users.ForEach(user => user.RolesInDepartment ??= new List<string>());
+        Loading = false;
+    }
+
+}
