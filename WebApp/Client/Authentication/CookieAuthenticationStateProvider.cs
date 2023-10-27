@@ -34,6 +34,7 @@ public class CookieAuthenticationStateProvider: AuthenticationStateProvider
         }, "AuthCookie");
         foreach (var responseRole in response.Roles ?? Enumerable.Empty<string>())
         {
+            _logger.LogWarning(responseRole);
             identity.AddClaim(new Claim(ClaimTypes.Role, responseRole));
         }
         

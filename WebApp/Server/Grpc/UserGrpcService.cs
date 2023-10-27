@@ -17,7 +17,8 @@ public class UserGrpcService : IUserGrpcService
     private readonly ILogger<UserGrpcService> _logger;
     private HttpContext HttpContext => _httpContextAccessor.HttpContext!;
 
-    public UserGrpcService(IHttpContextAccessor httpContextAccessor, IUserService userService, ApplicationDbContext db, ILogger<UserGrpcService> logger)
+    public UserGrpcService(IHttpContextAccessor httpContextAccessor, IUserService userService, ApplicationDbContext db,
+        ILogger<UserGrpcService> logger)
     {
         _httpContextAccessor = httpContextAccessor;
         _userService = userService;
@@ -51,7 +52,7 @@ public class UserGrpcService : IUserGrpcService
     {
         return new GetAllRolesInDepartmentResponse()
         {
-            Roles = new[] { RoleType.Receptionist, RoleType.Employee, RoleType.AdminDepartment }
+            Roles = new[] { RoleType.AdminDepartment, RoleType.Employee, RoleType.Receptionist, }
                 .Select(x => Enum.GetName(typeof(RoleType), x)!)
                 .ToList()
         };
@@ -60,65 +61,88 @@ public class UserGrpcService : IUserGrpcService
     public async Task<PerformUserAdminPanelResponse> PerformUserAdminPanel(PerformUserAdminPanelRequest request)
     {
         var department = await _db.Departments.SingleAsync(dep => dep.UrlTitle == request.DepartmentUrl);
-        if (request.UsersToUpdate != null && request.UsersToUpdate.Any())
-        {
-            var usersToUpdateDto = request.UsersToUpdate.ToDictionary(user => user.Id);
-            var usersToUpdate = await _db.Users
-                .Include(user => user.Roles)
-                .Where(user => usersToUpdateDto.Keys.Contains(user.Id))
-                .ToListAsync();
 
-            var rolesInTheDepartment = await _db.Roles
-                .Where(role => role.DepartmentId.HasValue && role.DepartmentId.Value == department.Id)
-                .ToListAsync();
+        if (request.UsersToUpdate == null || !request.UsersToUpdate.Any())
+            return new PerformUserAdminPanelResponse() { };
 
-            foreach (var user in usersToUpdate)
-            {
-                var newRoles = rolesInTheDepartment
-                    .Where(role => usersToUpdateDto[user.Id].RolesInDepartment?.Contains(role.RoleType.ToRoleName()) == true)
-                    .ToList();
-                var existedRoles = user.Roles!
-                    .Where(role => role.DepartmentId.HasValue && role.DepartmentId.Value == department.Id)
-                    .ToList();
-                existedRoles
-                    .ExceptBy(newRoles.Select(role => role.Id), role => role.Id)
-                    .Select(role => user.Roles!.Single(userRole => role.Id == userRole.Id))
-                    .ToList()
-                    .ForEach(role => user.Roles!.Remove(role));
-                newRoles
-                    .ExceptBy(existedRoles.Select(role => role.Id), role => role.Id)
-                    .ToList()
-                    .ForEach(role => user.Roles!.Add(role)
-                    );
-            }
-
-            await _db.SaveChangesAsync();
-        }
-        var users = await _db.Users
-            .AsNoTracking()
+        var usersToUpdateDto = request.UsersToUpdate.ToDictionary(user => user.Id);
+        var usersToUpdate = await _db.Users
             .Include(user => user.Roles)
+            .Where(user => usersToUpdateDto.Keys.Contains(user.Id))
             .ToListAsync();
 
-        return new PerformUserAdminPanelResponse()
+        var rolesInTheDepartment = await _db.Roles
+            .Where(role => role.DepartmentId.HasValue && role.DepartmentId.Value == department.Id)
+            .ToListAsync();
+
+        foreach (var user in usersToUpdate)
+        {
+            var newRoles = rolesInTheDepartment
+                .Where(role =>
+                    usersToUpdateDto[user.Id].RolesInDepartment?.Contains(role.RoleType.ToRoleName()) == true)
+                .ToList();
+            var existedRoles = user.Roles!
+                .Where(role => role.DepartmentId.HasValue && role.DepartmentId.Value == department.Id)
+                .ToList();
+            existedRoles
+                .ExceptBy(newRoles.Select(role => role.Id), role => role.Id)
+                .Select(role => user.Roles!.Single(userRole => role.Id == userRole.Id))
+                .ToList()
+                .ForEach(role => user.Roles!.Remove(role));
+            newRoles
+                .ExceptBy(existedRoles.Select(role => role.Id), role => role.Id)
+                .ToList()
+                .ForEach(role => user.Roles!.Add(role)
+                );
+        }
+
+        await _db.SaveChangesAsync();
+
+        return new PerformUserAdminPanelResponse() { };
+    }
+
+    public async Task<SearchUserByLastNameResponse> SearchUserByLastName(SearchUserByLastNameRequest request)
+    {
+        var department = await _db.Departments.SingleAsync(dep => dep.UrlTitle == request.DepartmentUrl);
+
+        var users = string.IsNullOrEmpty(request.LastName)
+            ? await _db.Users
+                .Include(user => user.Roles)
+                .Where(user =>
+                    user.Roles!.Any(role => role.DepartmentId.HasValue && role.DepartmentId.Value == department.Id))
+                .OrderBy(user => user.LastName)
+                .Take(20)
+                .Select(user => UserToDto(user, department))
+                .ToListAsync()
+            : await _db.Users
+                .Where(user => user.LastName!.Contains(request.LastName))
+                .OrderBy(user => user.LastName)
+                .Take(20)
+                .Include(user => user.Roles)
+                .Select(user => UserToDto(user, department))
+                .ToListAsync();
+
+        return new SearchUserByLastNameResponse()
         {
             Users = users
-                .Select(user =>
-                {
-                    var rolesInDepartment = user.Roles?
-                        .Where(role => role.DepartmentId.HasValue && role.DepartmentId.Value == department.Id)
-                        .Select(role => role.RoleType.ToRoleName())
-                        .ToList();
-                    return new UserDto()
-                    {
-                        Id = user.Id,
-                        FirstName = user.FirstName,
-                        LastName = user.LastName,
-                        RolesInDepartment = rolesInDepartment
-                    };
-                })
-                .ToList()
         };
     }
+
+    private static UserDto UserToDto(User user, Department department)
+    {
+        var rolesInDepartment = user.Roles?
+            .Where(role => role.DepartmentId.HasValue && role.DepartmentId.Value == department.Id)
+            .Select(role => role.RoleType.ToRoleName())
+            .ToList();
+        return new UserDto()
+        {
+            Id = user.Id,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            RolesInDepartment = rolesInDepartment
+        };
+    }
+
 
     private IEnumerable<string> FormRoles(IEnumerable<Role> roles, bool includeSimpleRoles)
     {

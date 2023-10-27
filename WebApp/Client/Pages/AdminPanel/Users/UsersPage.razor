@@ -2,7 +2,12 @@
 @attribute [Route(Routes.Admin.Users.Route)]
 @layout AdminPageLayout
 @inject IUserGrpcService UserGrpcService
+@inject ILogger<UsersPage> Logger
 
+@code{
+    
+}
+<Input TValue="string" OnInput="value => OnLastNameSearch(value.Value.ToString())"/>
 <Table
     TItem="UserDto"
     Loading="Loading"
@@ -10,13 +15,14 @@
     <PropertyColumn Property="ctx => ctx.FirstName"/>
     <PropertyColumn Property="ctx => ctx.MiddleName"/>
     <PropertyColumn Property="ctx => ctx.LastName"/>
+    
     <Column @bind-Field="context.RolesInDepartment">
         <SimpleSelect
             Mode="multiple"
-            DefaultValues="context.RolesInDepartment"
+            @bind-Values="context.RolesToBind"
             DataSource="Roles"
-            OnSelectedItemsChanged="enumerable => OnSelectedRolesChanged(context, enumerable)">
-            
+            >
+
         </SimpleSelect>
     </Column>
 </Table>
@@ -37,7 +43,7 @@
     protected override async Task OnInitializedAsync()
     {
         Loading = true;
-        var usersResponse = await UserGrpcService.PerformUserAdminPanel(new PerformUserAdminPanelRequest()
+        var usersResponse = await UserGrpcService.SearchUserByLastName(new SearchUserByLastNameRequest()
         {
             DepartmentUrl = DepartmentUrl
         });
@@ -49,23 +55,37 @@
         Loading = false;
     }
 
-    private void OnSelectedRolesChanged(UserDto context, IEnumerable<string> value)
-    {
-        context.Changed = true;
-        context.RolesInDepartment = value.ToList();
-    }
-
     private async Task OnSave()
     {
         Loading = true;
-        var usersResponse = await UserGrpcService.PerformUserAdminPanel(new PerformUserAdminPanelRequest()
+        await UserGrpcService.PerformUserAdminPanel(new PerformUserAdminPanelRequest()
         {
             UsersToUpdate = Users.Where(user => user.Changed).ToList(),
             DepartmentUrl = DepartmentUrl
         });
-        Users = usersResponse.Users ?? new List<UserDto>();
-        Users.ForEach(user => user.RolesInDepartment ??= new List<string>());
+        
+        var response = await UserGrpcService.SearchUserByLastName(new SearchUserByLastNameRequest()
+        {
+            DepartmentUrl = DepartmentUrl,
+        });
+        var users = response.Users ?? new List<UserDto>();
+        users.ForEach(user => user.RolesInDepartment ??= new List<string>());
+        Users = users;
         Loading = false;
     }
 
+    private async Task OnLastNameSearch(string lastName)
+    {
+        var response = await UserGrpcService.SearchUserByLastName(new SearchUserByLastNameRequest()
+        {
+            DepartmentUrl = DepartmentUrl,
+            LastName = lastName
+        });
+        var users = response.Users ?? new List<UserDto>();
+        users.ForEach(user => user.RolesInDepartment ??= new List<string>());
+        Users = Users
+            .Where(user => user.Changed)
+            .UnionBy(users, user => user.Id)
+            .ToList();
+    }
 }

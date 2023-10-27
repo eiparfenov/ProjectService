@@ -1,5 +1,7 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProtoBuf.Grpc.Server;
 using WebApp.Server;
@@ -60,6 +62,12 @@ app.MapGet("/auth-test", async context =>
 {
     var user = context.User.Claims.Select(x => $"{x.Type} {x.Value}");
     await context.Response.WriteAsync(string.Join(", ", user));
+});
+app.MapGet("/temp/login", async ([FromQuery] Guid userId, HttpContext context) =>
+{
+    await context.SignOutAsync();
+    await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim("UserId", userId.ToString()) }, "Cookie")));
+    context.Response.Redirect("/");
 });
 
 #endregion

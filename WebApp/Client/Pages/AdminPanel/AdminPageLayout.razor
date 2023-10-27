@@ -1,19 +1,27 @@
-﻿@inherits LayoutComponentBase
+﻿@using WebApp.Client.Pages.Components
+@inherits LayoutComponentBase
 @inject NavigationManager NavigationManager
 
 <Layout>
     <Header>
-        <Paragraph>Сервис бронирования</Paragraph>
+        <Space Direction="DirectionVHType.Horizontal">
+            <SpaceItem>
+                <Paragraph>Сервис бронирования</Paragraph>
+            </SpaceItem>
+            <SpaceItem>
+                <UserDisplayComponent/>
+            </SpaceItem>
+        </Space>
     </Header>
     <Content Style="margin: 2em">
-        <Layout  Class="site-layout-background">
-            <Sider  Class="site-layout-background">
+        <Layout Class="site-layout-background">
+            <Sider Class="site-layout-background">
                 <Menu>
                     <MenuItem OnClick="() => NavigationManager.NavigateTo(Routes.Admin.Index(DepartmentUrl))">Главная</MenuItem>
                     <AuthorizeView Roles="SuperAdmin">
                         <MenuItem OnClick="() => NavigationManager.NavigateTo(Routes.Admin.Department.Index(DepartmentUrl))">Подразделения</MenuItem>
                     </AuthorizeView>
-                    <AuthorizeView Roles="SuperAdmin, DepartmentAdmin">
+                    <AuthorizeView Roles=@AdminRoles>
                         <MenuItem OnClick="() => NavigationManager.NavigateTo(Routes.Admin.Users.Index(DepartmentUrl))">Пользователи</MenuItem>
                     </AuthorizeView>
                 </Menu>
@@ -35,5 +43,6 @@
     public RouteData RouteData { get; set; } = default!;
 
     public string DepartmentUrl => RouteData.RouteValues["departmentUrl"].ToString();
+    public string AdminRoles => $"SuperAdmin, AdminDepartment:{DepartmentUrl}";
 
 }
