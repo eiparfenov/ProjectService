@@ -12,13 +12,13 @@
     OnExpand="OnRowExpand">
     <ColumnDefinitions>
         <Column @bind-Field="context.Title">
-            <Input TValue="string" @bind-Value="context.Title" OnChange="() => OnEquipmentModelChange(context)"/>
+            <Input TValue="string" @bind-Value="context.Title" OnChange="() => context.PerformUpdate()"/>
         </Column>
         <Column @bind-Field="context.Description">
-            <Input TValue="string" @bind-Value="context.Description" OnChange="() => OnEquipmentModelChange(context)"/>
+            <Input TValue="string" @bind-Value="context.Description" OnChange="() => context.PerformUpdate()"/>
         </Column>
         <ActionColumn>
-            <Button Danger OnClick="() => context.State = AdminPanelState.Delete">
+            <Button Danger OnClick="() => { context.PerformDelete();  }">
                 <Icon Type="delete" Theme="outline"/>Удалить
             </Button>
             <Button OnClick="() => OnAddEquipment(context)">
@@ -35,20 +35,31 @@
             Context="innerContext">
 
             <Column @bind-Field="innerContext.InvNumber">
-                <Input TValue="string" @bind-Value="innerContext.InvNumber" OnChange="() => OnEquipmentChange(innerContext)"/>
+                <Input TValue="string" @bind-Value="innerContext.InvNumber" OnChange="() => innerContext.PerformUpdate()"/>
             </Column>
             <Column @bind-Field="innerContext.Comment">
-                <Input TValue="string" @bind-Value="innerContext.Comment" OnChange="() => OnEquipmentChange(innerContext)"/>
+                <Input TValue="string" @bind-Value="innerContext.Comment" OnChange="() => innerContext.PerformUpdate()"/>
             </Column>
             <ActionColumn>
-                <Button Danger OnClick="() => innerContext.State = AdminPanelState.Delete">
+                <Button Danger OnClick="() => innerContext.PerformDelete()">
                     <Icon Type="delete" Theme="outline"/>Удалить
                 </Button>
             </ActionColumn>
         </Table>
+        <div>
+            @foreach (var dto in rowData.Data.Equipments?.Where(eqModel => eqModel.State is AdminPanelState.Delete) ?? Enumerable.Empty<EquipmentDto>())
+            {
+                <Tag OnClick="() => dto.Recover()"><Icon Type="redo" Theme="outline"/> @dto.InvNumber</Tag>
+            }
+        </div>
     </ExpandTemplate>
 </Table>
-
+<div>
+    @foreach (var dto in EditedEquipmentModels.Where(eqModel => eqModel.State is AdminPanelState.Delete))
+    {
+        <Tag OnClick="() => dto.Recover()"><Icon Type="redo" Theme="outline"/> @dto.Title</Tag>
+    }
+</div>
 <Button OnClick="OnAddEquipmentModel">
     <Icon Type="plus-circle" Theme="outline"/>Новая модель оборудования
 </Button>
@@ -62,6 +73,7 @@
     public string? DepartmentUrl { get; set; }
 
     public bool Loading { get; set; }
+
     public bool Savable => EditedEquipmentModels
         .Any(eqModel => eqModel.State != AdminPanelState.Initial || eqModel.Equipments?
             .Any(eq => eq.State != AdminPanelState.Initial) == true);
@@ -148,21 +160,4 @@
 
         await RefreshTable();
     }
-
-    private async Task OnEquipmentModelChange(EquipmentModelDto dto)
-    {
-        if (dto.State is AdminPanelState.Initial)
-        {
-            dto.State = AdminPanelState.Update;
-        }
-    }
-
-    private async Task OnEquipmentChange(EquipmentDto dto)
-    {
-        if (dto.State is AdminPanelState.Initial)
-        {
-            dto.State = AdminPanelState.Update;
-        }
-    }
-    
 }

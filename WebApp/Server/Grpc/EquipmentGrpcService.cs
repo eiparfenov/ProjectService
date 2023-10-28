@@ -113,6 +113,7 @@ public class EquipmentGrpcService : IEquipmentGrpcService
 
         var equipmentModels = await _db.EquipmentModels
             .Where(model => model.DepartmentId == department.Id)
+            .OrderBy(model => model.Title)
             .Select(eqModel => new EquipmentModelDto()
             {
                 Id = eqModel.Id,
@@ -132,6 +133,7 @@ public class EquipmentGrpcService : IEquipmentGrpcService
     {
         var equipments = await _db.Equipments
             .Where(equipment => equipment.EquipmentModelId == request.EquipmentModelId)
+            .OrderBy(equipment => equipment.InvNumber)
             .Select(equipment => new EquipmentDto()
             {
                 Id = equipment.Id,

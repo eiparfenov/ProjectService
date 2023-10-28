@@ -12,22 +12,24 @@ public interface IEquipmentGrpcService
 }
 
 [ProtoContract]
-public class EquipmentModelDto
+public class EquipmentModelDto: IHasAdminPanelState
 {
     [ProtoMember(1)] public Guid Id { get; set; }
     [ProtoMember(2)] public string? Title { get; set; }
     [ProtoMember(3)] public string? Description { get; set; }
     [ProtoMember(4)] public AdminPanelState State { get; set; }
     [ProtoMember(5)] public List<EquipmentDto>? Equipments { get; set; }
+    public AdminPanelState PreviousState { get; set; }
 }
 
 [ProtoContract]
-public class EquipmentDto
+public class EquipmentDto: IHasAdminPanelState
 {
     [ProtoMember(1)] public Guid Id { get; set; }
     [ProtoMember(2)] public string? InvNumber { get; set; }
     [ProtoMember(3)] public string? Comment { get; set; }
     [ProtoMember(4)] public AdminPanelState State { get; set; }
+    public AdminPanelState PreviousState { get; set; }
 }
 
 [ProtoContract]
