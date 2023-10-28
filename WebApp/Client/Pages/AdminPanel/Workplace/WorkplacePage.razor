@@ -7,7 +7,7 @@
 <Table
     TItem="WorkplaceDto"
     Loading="Loading"
-    DataSource="EditedWorkplaces">
+    DataSource="EditedWorkplaces.Where(wp => wp.State != AdminPanelState.Delete)">
     <Column @bind-Field="context.Title">
         <Input TValue="string" @bind-Value="context.Title" OnChange="() => context.PerformUpdate()"/>
     </Column>
@@ -24,7 +24,26 @@
             DataSource="EquipmentModels"
             @bind-Values="context.EquipmentModelToBind"/>
     </Column>
+    <ActionColumn>
+        <Button Danger OnClick="() => { context.PerformDelete(); }">
+            <Icon Type="delete" Theme="outline"/> Удалить
+        </Button>
+        @if (context.State == AdminPanelState.Update)
+        {
+            <Button OnClick="() => Recover(context)">
+                <Icon Type="redo" Theme="outline"/> Восстановить
+            </Button>
+        }
+    </ActionColumn>
 </Table>
+
+<div>
+    <Paragraph>Корзина</Paragraph>
+    @foreach (var dto in EditedWorkplaces.Where(wp => wp.State == AdminPanelState.Delete))
+    {
+        <Tag OnClick="() => dto.Recover()"><Icon Type="redo" Theme="outline"/> @dto.Title</Tag>
+    }
+</div>
 
 <Button OnClick="OnCreateWorkplace">
     <Icon Type="plus-circle" Theme="outline"/>Новое рабочее место
@@ -42,6 +61,7 @@
 
     public bool Loading { get; set; }
     public List<WorkplaceDto> EditedWorkplaces { get; set; } = new();
+    public Dictionary<Guid, WorkplaceDto> WorkplacesForRecover { get; set; } = new();
 
     public List<EquipmentModelOnWorkplaceDto> EquipmentModels { get; set; } = new();
 
@@ -64,7 +84,16 @@
             DepartmentUrl = DepartmentUrl
         });
         EditedWorkplaces = workplacesResponse.Workplaces ?? new List<WorkplaceDto>();
-        
+        EditedWorkplaces.ForEach(wp => wp.EquipmentModels ??= new List<Guid>());
+
+        WorkplacesForRecover = EditedWorkplaces.ToDictionary(x => x.Id, dto => new WorkplaceDto()
+        {
+            Id = dto.Id,
+            Title = dto.Title,
+            Comment = dto.Comment,
+            EquipmentModels = new List<Guid>(dto.EquipmentModels!)
+        });
+
         Loading = false;
     }
 
@@ -87,5 +116,14 @@
                 .ToList()
         });
         await RefreshWorkplacesAndEquipment();
+    }
+
+    private void Recover(WorkplaceDto dto)
+    {
+        var rec = WorkplacesForRecover[dto.Id];
+        dto.EquipmentModels = new List<Guid>(rec.EquipmentModels!);
+        dto.Title = rec.Title;
+        dto.Comment = rec.Comment;
+        dto.State = AdminPanelState.Initial;
     }
 }
