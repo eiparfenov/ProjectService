@@ -1,0 +1,91 @@
+﻿@using WebApp.Shared.Grpc
+@attribute [Route(Routes.Admin.Workplaces.Route)]
+@layout AdminPageLayout
+@inject IWorkplaceGrpcService WorkplaceGrpcService
+@inject ILogger<WorkplacePage> Logger
+
+<Table
+    TItem="WorkplaceDto"
+    Loading="Loading"
+    DataSource="EditedWorkplaces">
+    <Column @bind-Field="context.Title">
+        <Input TValue="string" @bind-Value="context.Title" OnChange="() => context.PerformUpdate()"/>
+    </Column>
+    <Column @bind-Field="context.Comment">
+        <Input TValue="string" @bind-Value="context.Comment" OnChange="() => context.PerformUpdate()"/>
+    </Column>
+    <Column @bind-Field="context.EquipmentModels">
+        <Select
+            Mode="multiple"
+            TItem="EquipmentModelOnWorkplaceDto"
+            TItemValue="Guid"
+            ValueName="@nameof(EquipmentModelOnWorkplaceDto.Id)"
+            LabelName="@nameof(EquipmentModelOnWorkplaceDto.Title)"
+            DataSource="EquipmentModels"
+            @bind-Values="context.EquipmentModelToBind"/>
+    </Column>
+</Table>
+
+<Button OnClick="OnCreateWorkplace">
+    <Icon Type="plus-circle" Theme="outline"/>Новое рабочее место
+</Button>
+<Button Type="@ButtonType.Primary" Disabled="!Savable" OnClick="OnSave">
+    <Icon Type="save" Theme="outline"/> Сохранить
+</Button>
+
+@code {
+
+    [Parameter]
+    public string? DepartmentUrl { get; set; }
+
+    public bool Savable => EditedWorkplaces.Any(wp => wp.State != AdminPanelState.Initial);
+
+    public bool Loading { get; set; }
+    public List<WorkplaceDto> EditedWorkplaces { get; set; } = new();
+
+    public List<EquipmentModelOnWorkplaceDto> EquipmentModels { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshWorkplacesAndEquipment();
+    }
+
+    private async Task RefreshWorkplacesAndEquipment()
+    {
+        Loading = true;
+        var equipmentModelsResponse = await WorkplaceGrpcService.GetAllEquipmentModels(new GetAllEquipmentModelsRequest()
+        {
+            DepartmentUrl = DepartmentUrl
+        });
+        EquipmentModels = equipmentModelsResponse.EquipmentModels ?? new List<EquipmentModelOnWorkplaceDto>();
+
+        var workplacesResponse = await WorkplaceGrpcService.GetAllWorkplaces(new GetAllWorkplacesRequest()
+        {
+            DepartmentUrl = DepartmentUrl
+        });
+        EditedWorkplaces = workplacesResponse.Workplaces ?? new List<WorkplaceDto>();
+        
+        Loading = false;
+    }
+
+    private void OnCreateWorkplace()
+    {
+        EditedWorkplaces.Add(new WorkplaceDto()
+        {
+            State = AdminPanelState.Create,
+            EquipmentModels = new List<Guid>()
+        });
+    }
+
+    private async Task OnSave()
+    {
+        await WorkplaceGrpcService.PerformWorkplaceAdminPanel(new PerformWorkplaceAdminPanelRequest()
+        {
+            DepartmentUrl = DepartmentUrl,
+            EditedWorkplaces = EditedWorkplaces
+                .Where(wp => wp.State != AdminPanelState.Initial)
+                .ToList()
+        });
+        await RefreshWorkplacesAndEquipment();
+    }
+}

@@ -12,18 +12,24 @@ public static class Routes
 
         public static class Department
         {
-            public const string Route = $"{Admin.Route}/departments";
+            public const string Route = $"{Admin.Route}/department";
             public static string Index(string departmentUrl) => FillTemplate(Route, departmentUrl);
         }
 
         public static class Users
         {
-            public const string Route = $"{Admin.Route}/users";
+            public const string Route = $"{Admin.Route}/user";
             public static string Index(string departmentUrl) => FillTemplate(Route, departmentUrl);
         }
         public static class Equipment
         {
             public const string Route = $"{Admin.Route}/equipment";
+            public static string Index(string departmentUrl) => FillTemplate(Route, departmentUrl);
+        }
+
+        public static class Workplaces
+        {
+            public const string Route = $"{Admin.Route}/workplace";
             public static string Index(string departmentUrl) => FillTemplate(Route, departmentUrl);
         }
     }

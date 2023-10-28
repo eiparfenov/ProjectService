@@ -22,6 +22,7 @@ builder.Services.AddLogging();
 builder.Services.AddCodeFirstGrpcClient<IUserGrpcService>(options => options.Address = baseUri).ConfigureChannel(options => options.HttpHandler = handler);
 builder.Services.AddCodeFirstGrpcClient<IDepartmentGrpcService>(options => options.Address = baseUri).ConfigureChannel(options => options.HttpHandler = handler);
 builder.Services.AddCodeFirstGrpcClient<IEquipmentGrpcService>(options => options.Address = baseUri).ConfigureChannel(options => options.HttpHandler = handler);
+builder.Services.AddCodeFirstGrpcClient<IWorkplaceGrpcService>(options => options.Address = baseUri).ConfigureChannel(options => options.HttpHandler = handler);
 
 builder.Services.AddScoped<AuthenticationStateProvider, CookieAuthenticationStateProvider>();
 builder.Services.AddAuthorizationCore();

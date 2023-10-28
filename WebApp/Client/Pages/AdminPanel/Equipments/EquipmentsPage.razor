@@ -152,7 +152,7 @@
                 .Where(eq => eq.State != AdminPanelState.Initial)
                 .ToList()
             );
-        await EquipmentGrpcService.PerformAdminPanel(new PerformAdminPanelRequest()
+        await EquipmentGrpcService.PerformEquipmentAdminPanel(new PerformEquipmentAdminPanelRequest()
         {
             DepartmentUrl = DepartmentUrl,
             EquipmentModelsWithChanges = equipmentsToUpdate

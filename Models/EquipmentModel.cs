@@ -10,4 +10,5 @@ public class EquipmentModel
     public Guid DepartmentId { get; set; }
 
     public List<Equipment>? Equipments { get; set; }
+    public List<Workplace>? Workplaces { get; set; }
 }

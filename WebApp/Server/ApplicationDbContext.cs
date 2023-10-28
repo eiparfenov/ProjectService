@@ -11,6 +11,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<UserRole> UserRoles { get; set; } = default!;
     public DbSet<EquipmentModel> EquipmentModels { get; set; } = default!;
     public DbSet<Equipment> Equipments { get; set; } = default!;
+    public DbSet<Workplace> Workplaces { get; set; } = default!;
 
     public ApplicationDbContext(DbContextOptions options) : base(options)
     {
@@ -45,10 +46,34 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<EquipmentModel>(builder =>
         {
             builder.ToTable("EquipmentModels");
+            builder
+                .HasMany(eqModel => eqModel.Workplaces)
+                .WithMany(workplace => workplace.EquipmentModels)
+                .UsingEntity<EquipmentModelWorkplace>(
+                    left => left
+                        .HasOne(t => t.Workplace)
+                        .WithMany()
+                        .HasForeignKey(t => t.WorkplaceId),
+                    right => right
+                        .HasOne(t => t.EquipmentModel)
+                        .WithMany()
+                        .HasForeignKey(t => t.EquipmentModelId),
+                    t => t
+                        .HasKey(t => new { t.EquipmentModelId, t.WorkplaceId })
+                );
         });
         modelBuilder.Entity<Equipment>(builder =>
         {
             builder.ToTable("Equipments");
         });
+        modelBuilder.Entity<Workplace>(builder =>
+        {
+            builder.ToTable("Workplaces");
+        });
+        modelBuilder.Entity<EquipmentModelWorkplace>(builder =>
+        {
+            builder.ToTable("EquipmentModelWorkplaces");
+        });
+
     }
 }

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using WebApp.Server;
@@ -11,9 +12,11 @@ using WebApp.Server;
 namespace WebApp.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231028110615_AddWorkplaces")]
+    partial class AddWorkplaces
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -163,15 +166,10 @@ namespace WebApp.Server.Migrations
                     b.Property<string>("Comment")
                         .HasColumnType("text");
 
-                    b.Property<Guid>("DepartmentId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Title")
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("DepartmentId");
 
                     b.ToTable("Workplaces", (string)null);
                 });
@@ -244,17 +242,6 @@ namespace WebApp.Server.Migrations
                     b.Navigation("Role");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Models.Workplace", b =>
-                {
-                    b.HasOne("Models.Department", "Department")
-                        .WithMany()
-                        .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Department");
                 });
 
             modelBuilder.Entity("Models.Department", b =>

@@ -77,6 +77,7 @@ app.MapGet("/temp/login", async ([FromQuery] Guid userId, HttpContext context) =
 app.MapGrpcService<UserGrpcService>().EnableGrpcWeb();
 app.MapGrpcService<DepartmentGrpcService>().EnableGrpcWeb();
 app.MapGrpcService<EquipmentGrpcService>().EnableGrpcWeb();
+app.MapGrpcService<WorkplaceGrpcService>().EnableGrpcWeb();
 
 #endregion
 

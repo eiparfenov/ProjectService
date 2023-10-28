@@ -24,6 +24,7 @@
                     <AuthorizeView Roles=@AdminRoles>
                         <MenuItem OnClick="() => NavigationManager.NavigateTo(Routes.Admin.Users.Index(DepartmentUrl))">Пользователи</MenuItem>
                         <MenuItem OnClick="() => NavigationManager.NavigateTo(Routes.Admin.Equipment.Index(DepartmentUrl))">Оборудование</MenuItem>
+                        <MenuItem OnClick="() => NavigationManager.NavigateTo(Routes.Admin.Workplaces.Index(DepartmentUrl))">Рабочие места</MenuItem>
                     </AuthorizeView>
                 </Menu>
             </Sider>

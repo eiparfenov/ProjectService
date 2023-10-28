@@ -6,7 +6,7 @@ namespace WebApp.Shared.Grpc;
 [Service("rtu-tc.reservation.equipment-service")]
 public interface IEquipmentGrpcService
 {
-    Task<PerformAdminPanelResponse> PerformAdminPanel(PerformAdminPanelRequest request);
+    Task<PerformEquipmentAdminPanelResponse> PerformEquipmentAdminPanel(PerformEquipmentAdminPanelRequest request);
     Task<GetEquipmentModelsResponse> GetEquipmentModels(GetEquipmentModelsRequest request);
     Task<GetEquipmentResponse> GetEquipment(GetEquipmentRequest request);
 }
@@ -33,14 +33,14 @@ public class EquipmentDto: IHasAdminPanelState
 }
 
 [ProtoContract]
-public class PerformAdminPanelRequest
+public class PerformEquipmentAdminPanelRequest
 {
     [ProtoMember(1)] public string? DepartmentUrl { get; set; }
     [ProtoMember(2)] public List<EquipmentModelDto>? EquipmentModelsWithChanges { get; set; }
 }
 
 [ProtoContract]
-public class PerformAdminPanelResponse
+public class PerformEquipmentAdminPanelResponse
 {
     
 }

@@ -13,9 +13,9 @@ public class EquipmentGrpcService : IEquipmentGrpcService
         _db = db;
     }
 
-    public async Task<PerformAdminPanelResponse> PerformAdminPanel(PerformAdminPanelRequest request)
+    public async Task<PerformEquipmentAdminPanelResponse> PerformEquipmentAdminPanel(PerformEquipmentAdminPanelRequest request)
     {
-        if (request.EquipmentModelsWithChanges == null || !request.EquipmentModelsWithChanges.Any()) return new PerformAdminPanelResponse();
+        if (request.EquipmentModelsWithChanges == null || !request.EquipmentModelsWithChanges.Any()) return new PerformEquipmentAdminPanelResponse();
 
         var eqModelsToUpdateDto = request.EquipmentModelsWithChanges
             .Where(dto => dto.State is AdminPanelState.Update or AdminPanelState.Initial)
@@ -104,7 +104,7 @@ public class EquipmentGrpcService : IEquipmentGrpcService
 
         await _db.SaveChangesAsync();
 
-        return new PerformAdminPanelResponse();
+        return new PerformEquipmentAdminPanelResponse();
     }
 
     public async Task<GetEquipmentModelsResponse> GetEquipmentModels(GetEquipmentModelsRequest request)
