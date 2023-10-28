@@ -21,6 +21,11 @@ public static class Routes
             public const string Route = $"{Admin.Route}/users";
             public static string Index(string departmentUrl) => FillTemplate(Route, departmentUrl);
         }
+        public static class Equipment
+        {
+            public const string Route = $"{Admin.Route}/equipment";
+            public static string Index(string departmentUrl) => FillTemplate(Route, departmentUrl);
+        }
     }
     
     #region PathsFilling

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using WebApp.Server;
@@ -11,9 +12,11 @@ using WebApp.Server;
 namespace WebApp.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231027205101_AddEquipment")]
+    partial class AddEquipment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -60,7 +63,7 @@ namespace WebApp.Server.Migrations
 
                     b.HasIndex("EquipmentModelId");
 
-                    b.ToTable("Equipments", (string)null);
+                    b.ToTable("Equipment");
                 });
 
             modelBuilder.Entity("Models.EquipmentModel", b =>
@@ -82,7 +85,7 @@ namespace WebApp.Server.Migrations
 
                     b.HasIndex("DepartmentId");
 
-                    b.ToTable("EquipmentModels", (string)null);
+                    b.ToTable("EquipmentModel");
                 });
 
             modelBuilder.Entity("Models.Role", b =>

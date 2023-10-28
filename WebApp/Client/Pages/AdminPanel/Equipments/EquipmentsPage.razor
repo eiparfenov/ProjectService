@@ -1,0 +1,168 @@
+﻿@using WebApp.Shared.Grpc
+@using AntDesign.TableModels
+@layout AdminPageLayout
+@attribute [Route(Routes.Admin.Equipment.Route)]
+@inject IEquipmentGrpcService EquipmentGrpcService
+@inject ILogger<EquipmentsPage> Logger
+
+<Table
+    TItem="EquipmentModelDto"
+    Loading="Loading"
+    DataSource="EquipmentModelsToShow"
+    OnExpand="OnRowExpand">
+    <ColumnDefinitions>
+        <Column @bind-Field="context.Title">
+            <Input TValue="string" @bind-Value="context.Title" OnChange="() => OnEquipmentModelChange(context)"/>
+        </Column>
+        <Column @bind-Field="context.Description">
+            <Input TValue="string" @bind-Value="context.Description" OnChange="() => OnEquipmentModelChange(context)"/>
+        </Column>
+        <ActionColumn>
+            <Button Danger OnClick="() => context.State = AdminPanelState.Delete">
+                <Icon Type="delete" Theme="outline"/>Удалить
+            </Button>
+            <Button OnClick="() => OnAddEquipment(context)">
+                <Icon Type="plus-circle" Theme="outline"/>Новое оборудование
+            </Button>
+        </ActionColumn>
+    </ColumnDefinitions>
+
+    <ExpandTemplate Context="rowData">
+        <Table
+            TItem="EquipmentDto"
+            Loading="rowData.Data.Equipments == null"
+            DataSource="rowData.Data.Equipments?.Where(eq => eq.State != AdminPanelState.Delete)"
+            Context="innerContext">
+
+            <Column @bind-Field="innerContext.InvNumber">
+                <Input TValue="string" @bind-Value="innerContext.InvNumber" OnChange="() => OnEquipmentChange(innerContext)"/>
+            </Column>
+            <Column @bind-Field="innerContext.Comment">
+                <Input TValue="string" @bind-Value="innerContext.Comment" OnChange="() => OnEquipmentChange(innerContext)"/>
+            </Column>
+            <ActionColumn>
+                <Button Danger OnClick="() => innerContext.State = AdminPanelState.Delete">
+                    <Icon Type="delete" Theme="outline"/>Удалить
+                </Button>
+            </ActionColumn>
+        </Table>
+    </ExpandTemplate>
+</Table>
+
+<Button OnClick="OnAddEquipmentModel">
+    <Icon Type="plus-circle" Theme="outline"/>Новая модель оборудования
+</Button>
+<Button Type="@ButtonType.Primary" Disabled="!Savable" OnClick="OnSave">
+    <Icon Type="save" Theme="outline"/> Сохранить
+</Button>
+
+@code {
+
+    [Parameter]
+    public string? DepartmentUrl { get; set; }
+
+    public bool Loading { get; set; }
+    public bool Savable => EditedEquipmentModels
+        .Any(eqModel => eqModel.State != AdminPanelState.Initial || eqModel.Equipments?
+            .Any(eq => eq.State != AdminPanelState.Initial) == true);
+
+    public List<EquipmentModelDto> EquipmentModels { get; set; } = new();
+    public List<EquipmentModelDto> EditedEquipmentModels { get; set; } = new();
+    public IEnumerable<EquipmentModelDto> EquipmentModelsToShow => EditedEquipmentModels.Where(eqModel => eqModel.State != AdminPanelState.Delete);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshTable();
+    }
+
+    private async Task RefreshTable()
+    {
+        Loading = true;
+        var response = await EquipmentGrpcService.GetEquipmentModels(new GetEquipmentModelsRequest()
+        {
+            DepartmentUrl = DepartmentUrl
+        });
+        EquipmentModels = response.EquipmentModels ?? new List<EquipmentModelDto>();
+        EditedEquipmentModels = new List<EquipmentModelDto>(EquipmentModels);
+        Loading = false;
+    }
+
+    private async Task OnAddEquipment(EquipmentModelDto context)
+    {
+        if (context.Equipments == null)
+        {
+            var equipmentRequest = await EquipmentGrpcService.GetEquipment(new GetEquipmentRequest());
+            context.Equipments = equipmentRequest.Equipments ?? new List<EquipmentDto>();
+        }
+        context.Equipments.Add(new EquipmentDto()
+        {
+            State = AdminPanelState.Create
+        });
+    }
+
+    private async Task OnAddEquipmentModel()
+    {
+        EditedEquipmentModels.Add(new EquipmentModelDto()
+        {
+            State = AdminPanelState.Create
+        });
+    }
+
+    private async Task OnRowExpand(RowData<EquipmentModelDto> rowData)
+    {
+        var eqModel = rowData.Data;
+        await RefreshEquipmentsInModel(eqModel);
+    }
+
+    private async Task RefreshEquipmentsInModel(EquipmentModelDto eqModel)
+    {
+        if (eqModel.State is AdminPanelState.Initial or AdminPanelState.Update)
+        {
+            var response = await EquipmentGrpcService.GetEquipment(new GetEquipmentRequest()
+            {
+                EquipmentModelId = eqModel.Id
+            });
+            eqModel.Equipments ??= response.Equipments ?? new List<EquipmentDto>();
+        }
+        else
+        {
+            eqModel.Equipments ??= new List<EquipmentDto>();
+        }
+    }
+
+    private async Task OnSave()
+    {
+        var equipmentsToUpdate = EditedEquipmentModels
+            .Where(eqModel => eqModel.State != AdminPanelState.Initial || eqModel.Equipments?.Any(eq => eq.State != AdminPanelState.Initial) == true)
+            .ToList();
+        equipmentsToUpdate
+            .ForEach(eqModel => eqModel.Equipments = eqModel.Equipments?
+                .Where(eq => eq.State != AdminPanelState.Initial)
+                .ToList()
+            );
+        await EquipmentGrpcService.PerformAdminPanel(new PerformAdminPanelRequest()
+        {
+            DepartmentUrl = DepartmentUrl,
+            EquipmentModelsWithChanges = equipmentsToUpdate
+        });
+
+        await RefreshTable();
+    }
+
+    private async Task OnEquipmentModelChange(EquipmentModelDto dto)
+    {
+        if (dto.State is AdminPanelState.Initial)
+        {
+            dto.State = AdminPanelState.Update;
+        }
+    }
+
+    private async Task OnEquipmentChange(EquipmentDto dto)
+    {
+        if (dto.State is AdminPanelState.Initial)
+        {
+            dto.State = AdminPanelState.Update;
+        }
+    }
+    
+}

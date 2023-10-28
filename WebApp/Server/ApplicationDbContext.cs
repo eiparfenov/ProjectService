@@ -9,6 +9,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<Role> Roles { get; set; } = default!;
     public DbSet<Department> Departments { get; set; } = default!;
     public DbSet<UserRole> UserRoles { get; set; } = default!;
+    public DbSet<EquipmentModel> EquipmentModels { get; set; } = default!;
+    public DbSet<Equipment> Equipments { get; set; } = default!;
 
     public ApplicationDbContext(DbContextOptions options) : base(options)
     {
@@ -39,6 +41,14 @@ public class ApplicationDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(role => role.DepartmentId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<EquipmentModel>(builder =>
+        {
+            builder.ToTable("EquipmentModels");
+        });
+        modelBuilder.Entity<Equipment>(builder =>
+        {
+            builder.ToTable("Equipments");
         });
     }
 }
